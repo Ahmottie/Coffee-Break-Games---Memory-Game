@@ -1,6 +1,7 @@
 package seda_project.control_alt_defeat.gamebox.Memory;
 
 import javafx.scene.Parent;
+import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.layout.VBox;
 
@@ -13,9 +14,9 @@ public class Configuration {
         System.out.println("max: "+max);
         System.out.println("stepsize: "+stepsize);
         if (max == 2){
-            smallGame.setText(String.valueOf(tupleSize/2));
+            smallGame.setText(String.valueOf(tupleSize));
             mediumGame.setDisable(false);
-            mediumGame.setText(String.valueOf(tupleSize));
+            mediumGame.setText(String.valueOf((max-stepsize)*tupleSize));
             largeGame.setDisable(true);
             largeGame.setText("---");
         }
@@ -35,12 +36,21 @@ public class Configuration {
         }
     }
 
-    public static void changeScene(Parent root, VBox vBox){
-        try {
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public static boolean checkNameLength(String name, int player, Label statusLabel) {
+        int max = 16;
+        int length = name.length();
+        if (length > max){
+            statusLabel.setVisible(true);
+            statusLabel.setText("The name of player " + player +" may not be longer than "+max+" characters!");
+            return false;
         }
+        return true;
+    }
+    public static String checkNameInput(String name, int player){
+        if (name.equals("")){
+            name = "Player " + player;
+        }
+        return name;
     }
 
 
