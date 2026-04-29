@@ -42,7 +42,6 @@ public class GameScreen {
     @FXML
     private Text notificationText;
 
-    //TODO game Start
 
     @FXML
     private void onExitGameAction(){
@@ -165,6 +164,7 @@ public class GameScreen {
         blink.setCycleCount(4);
 
         localGame = new LocalGame(player1,player2,this,matchSize, deckSize);
+
     }
 
     public void turnCardsBack(){

@@ -75,11 +75,13 @@ public class LocalGame {
         return true;
     }
 
-    private String getActivePlayerName() {
+    public String getActivePlayerName() {
         if (activePlayer % 2 == 0) {
             return player2.getName();
         } else {
             return player1.getName();
         }
     }
+
+
 }
