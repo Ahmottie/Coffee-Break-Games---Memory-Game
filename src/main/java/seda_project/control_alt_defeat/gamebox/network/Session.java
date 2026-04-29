@@ -1,8 +1,8 @@
 package seda_project.control_alt_defeat.gamebox.network;
 
-import seda_project.control_alt_defeat.gamebox.engine.GameConfig;
-import seda_project.control_alt_defeat.gamebox.engine.GameEngine;
-import seda_project.control_alt_defeat.gamebox.engine.GameSetup;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameConfig;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameEngine;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameSetup;
 
 public final class Session {
 
