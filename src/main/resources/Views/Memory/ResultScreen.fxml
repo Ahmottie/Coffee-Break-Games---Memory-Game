@@ -46,16 +46,16 @@
                             <children>
                                 <Label alignment="CENTER" prefHeight="52.0" prefWidth="373.0" styleClass="headerText" text="Game Result" GridPane.columnSpan="2" />
                                 <Label text="Looser" GridPane.rowIndex="2" />
-                                <Label fx:id="looserLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="19.0" prefWidth="195.0" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                <Label fx:id="looserLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="70.0" prefWidth="223.0" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                 <Label text="Deck Size" GridPane.rowIndex="3" />
-                                <Label fx:id="deckSizeLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="19.0" prefWidth="211.0" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                <Label fx:id="deckSizeLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="57.0" prefWidth="223.0" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                 <Label text="Match Size" GridPane.rowIndex="4" />
-                                <Label fx:id="matchSizeLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="57.0" prefWidth="175.0" textAlignment="CENTER" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                                <Label fx:id="matchSizeLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="48.0" prefWidth="251.0" textAlignment="CENTER" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="4">
                                     <padding>
                                         <Insets left="5.0" right="5.0" />
                                     </padding></Label>
                                 <Label text="Winner:" GridPane.rowIndex="1" />
-                                <Label fx:id="winnerLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="19.0" prefWidth="189.0" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                <Label fx:id="winnerLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="83.0" prefWidth="223.0" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                             </children>
                             <padding>
                                 <Insets left="15.0" right="15.0" />

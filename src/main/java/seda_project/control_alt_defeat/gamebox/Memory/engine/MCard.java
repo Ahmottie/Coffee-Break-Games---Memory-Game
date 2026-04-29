@@ -32,5 +32,10 @@ public class MCard extends Button {
 
     public void setFaceUp(boolean b) {
         this.faceUp = b;
+        System.out.println("Change to " +b);
+    }
+
+    public boolean getFaceUp(){
+        return this.faceUp;
     }
 }

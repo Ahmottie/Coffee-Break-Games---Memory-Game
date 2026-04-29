@@ -1,6 +1,8 @@
 package seda_project.control_alt_defeat.gamebox.Memory.Controller;
 
 import javafx.animation.PauseTransition;
+import javafx.animation.ScaleTransition;
+import javafx.animation.SequentialTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -8,6 +10,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import seda_project.control_alt_defeat.gamebox.Memory.Configuration;
@@ -116,10 +119,7 @@ public class GameScreen {
 
                     cell.setOnAction(mouseEvent -> {
                         if (canClick) {
-                            cell.setText(Integer.toString(cell.getid()));
-                            cell.setDisable(true);
-                            cell.setFaceUp(true);
-                            flipCard(cell, id);
+                            flipmotion(cell);
                         }
                     });
                     cell.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
@@ -166,9 +166,10 @@ public class GameScreen {
 
     public void turnCardsBack(){
         canClick = false;
+        System.err.println("FLIPP THEM BACK ");
         pause.setOnFinished(e -> {
             for (MCard c : flippedCards) {
-                c.faceDown();
+                flipmotion(c);
             }
             flippedCards.clear();
             canClick = true;
@@ -183,7 +184,6 @@ public class GameScreen {
     }
 
     public void removeMatch() {
-
         canClick = false;
         pause.setOnFinished(e -> {
             for (MCard c : flippedCards){
@@ -237,5 +237,36 @@ public class GameScreen {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void flipmotion(MCard card){
+        System.out.println("Face UP? " + card.getFaceUp());
+        ScaleTransition firstHalf = new ScaleTransition(Duration.millis(300), card);
+        firstHalf.setFromX(1);
+        firstHalf.setToX(0);
+
+        ScaleTransition secondHalf = new ScaleTransition(Duration.millis(300), card);
+        secondHalf.setFromX(0);
+        secondHalf.setToX(1);
+
+        if (!card.getFaceUp()) {
+            System.out.println("!card.getFaceUp()");
+            firstHalf.setOnFinished(e -> {
+                card.setText(Integer.toString(card.getid()));
+                card.setDisable(true);
+                card.setFaceUp(true);
+                flipCard(card, card.getid());
+            });
+        }
+        else{
+            System.out.println("card.getFaceUp()");
+            firstHalf.setOnFinished(e -> {
+                card.faceDown();
+            });
+        }
+
+        SequentialTransition flip = new SequentialTransition(firstHalf, secondHalf);
+        flip.play();
+        System.err.println("AFTER FLIP " +card.getFaceUp());
     }
 }

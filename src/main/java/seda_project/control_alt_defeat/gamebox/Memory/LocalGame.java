@@ -30,11 +30,9 @@ public class LocalGame {
     }
 
     public void flipCard(int id) {
-        System.out.println(matchSize);
-        System.out.println("Flipped" + id);
+
         flippedCards.add(id);
-        System.out.println(flippedCards.size());
-        System.out.println(matchSize);
+
         if (flippedCards.size() == matchSize) {
             if (checkMatch()){
                 possibleMatches--;
