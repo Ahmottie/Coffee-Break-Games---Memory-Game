@@ -1,4 +1,5 @@
 package seda_project.control_alt_defeat.gamebox.Memory.Controller;
+import seda_project.control_alt_defeat.gamebox.network.Session;
 
 import javafx.animation.*;
 import javafx.application.Platform;
@@ -6,7 +7,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -15,17 +15,25 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import seda_project.control_alt_defeat.gamebox.Memory.Configuration;
-import seda_project.control_alt_defeat.gamebox.Memory.LocalGame;
 import seda_project.control_alt_defeat.gamebox.Memory.ViewStack;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.Card;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.Decks;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameConfig;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameEngine;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameEngineImpl;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameEventListener;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameSetup;
+import seda_project.control_alt_defeat.gamebox.Memory.engine.GameSnapshot;
 import seda_project.control_alt_defeat.gamebox.Memory.engine.MCard;
-import seda_project.control_alt_defeat.gamebox.Memory.engine.Player;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GameScreen {
     ViewStack vS;
-    LocalGame localGame;
+    GameEngine engine;
     int matchSize;
     int deckSize;
     ArrayList<MCard> flippedCards = new ArrayList<>();
@@ -33,22 +41,20 @@ public class GameScreen {
     PauseTransition pause = new PauseTransition(Duration.seconds(1.5));
     ScaleTransition blink;
 
-    @FXML
-    private VBox header;
+    private String myName;
+    private final Map<Integer, MCard> cardsById = new HashMap<>();
+    private final Map<MCard, Integer> cardIdOf = new HashMap<>();
+    private GameConfig config;
+    private GameSetup setup;
+
+    @FXML private VBox header;
+    @FXML private Label sboardP1, sboardP2, sboardScoreP1, sboardScoreP2, activePlayerLabel, turnStatusLabel;
+    @FXML private StackPane gamePane;
+    @FXML private Text notificationText;
 
     @FXML
-    private Label sboardP1,sboardP2,sboardScoreP1,sboardScoreP2,activePlayerLabel,turnStatusLabel;
-
-    @FXML
-    private StackPane gamePane;
-
-    @FXML
-    private Text notificationText;
-
-
-    @FXML
-    private void onExitGameAction(){
-        try{
+    private void onExitGameAction() {
+        try {
             vS.emtyStack();
             String address = "/Views/Memory/MemoryMenu.fxml";
 
@@ -63,8 +69,7 @@ public class GameScreen {
             Stage stage = (Stage) header.getScene().getWindow();
             stage.setScene(newScene);
             stage.show();
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -73,104 +78,110 @@ public class GameScreen {
         this.vS = vS;
     }
 
-    public void passMemoryData(String player1, String player2, int tupleSize, int deckSize){
+    public void passMemoryData(String player1, String player2, int tupleSize, int deckSize) {
         sboardP1.setText(player1);
         sboardP2.setText(player2);
 
         this.matchSize = tupleSize;
         this.deckSize = deckSize;
-        createBoard(tupleSize,deckSize);
+        this.myName = player1;
+
+        // Build a fresh GameConfig + GameSetup for a single-machine game.
+        this.config = new GameConfig(tupleSize, deckSize, player1, player2);
+        this.setup  = Decks.prepare(config);
+
+        createBoard();
     }
 
-    private void createBoard(int tupleSize, int deckSize) {
-        GridPane playingGrid  = new GridPane();
+    public void passLanData() {
+        Session s = Session.current();
+        sboardP1.setText(s.config.player1Name());
+        sboardP2.setText(s.config.player2Name());
 
+        this.matchSize = s.config.k();
+        this.deckSize  = s.config.deckSize();
+        this.myName    = s.myName;
+        this.config    = s.config;
+        this.setup     = s.setup;
+
+        createBoard();
+    }
+
+    private void createBoard() {
+        GridPane playingGrid = new GridPane();
         playingGrid.setHgap(5);
         playingGrid.setVgap(5);
         playingGrid.setPadding(new Insets(5));
 
-        int col = (int)Math.ceil(Math.sqrt(deckSize));
-        int row = (int) Math.ceil((double) deckSize /col);
+        List<Card> deck = setup.initialDeck();
+        int n = deck.size();
+        int col = (int) Math.ceil(Math.sqrt(n));
+        int row = (int) Math.ceil((double) n / col);
 
         int gridSize = 340;
+        playingGrid.setPrefSize(gridSize, gridSize);
+        playingGrid.setMaxSize(gridSize, gridSize);
+        playingGrid.setMinSize(gridSize, gridSize);
 
-        playingGrid.setPrefSize(gridSize,gridSize);
-        playingGrid.setMaxSize(gridSize,gridSize);
-        playingGrid.setMinSize(gridSize,gridSize);
-
-        double size = gridSize/row;
-
+        double size = (double) gridSize / row;
 
         for (int i = 0; i < col; i++) {
-            ColumnConstraints cc = new ColumnConstraints(size);
-            playingGrid.getColumnConstraints().add(cc);
+            playingGrid.getColumnConstraints().add(new ColumnConstraints(size));
         }
-
         for (int i = 0; i < row; i++) {
-            RowConstraints rc = new RowConstraints(size);
-            playingGrid.getRowConstraints().add(rc);
+            playingGrid.getRowConstraints().add(new RowConstraints(size));
         }
-
-
-        ArrayList<Integer> positions  = new ArrayList<>();
-        int repeats = deckSize/tupleSize;
-        for (int i = 0; i < repeats; i++) {
-            for (int j = 0; j < tupleSize; j++){
-                positions.add(i);
-            }
-        }
-
-        Collections.shuffle(positions);
 
         int placed = 0;
-        int overhang = deckSize%row;
+        int overhang = n % row;
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
                 int helper = 0;
-                if ( i == row-1 && overhang!=0){
-                    helper = (row-overhang)/2;
+                if (i == row - 1 && overhang != 0) {
+                    helper = (row - overhang) / 2;
                 }
-                if (placed < deckSize) {
-                    placed++;
-                    int id = positions.get((col * i) + j);
-                    MCard cell = new MCard(i, j+helper, id);
+                if (placed < n) {
+                    Card c = deck.get(placed);
+                    int cardId = c.id();
+                    int symbolId = c.symbolId();
+                    MCard cell = new MCard(i, j + helper, symbolId);
                     cell.setPrefSize(size, size);
                     cell.setMinSize(size, size);
                     cell.setMaxSize(size, size);
 
-                    cell.setOnAction(mouseEvent -> {
-                        if (canClick) {
-                            flipmotion(cell);
-                        }
+                    // Track the MCard in both directions so listeners can find it.
+                    cardsById.put(cardId, cell);
+                    cardIdOf.put(cell, cardId);
+
+                    cell.setOnAction(e -> {
+                        if (canClick) flipmotion(cell, cardId);
                     });
-                    playingGrid.add(cell, j+helper, i);
+                    playingGrid.add(cell, j + helper, i);
+                    placed++;
                 }
             }
         }
+
         gamePane.getChildren().add(playingGrid);
         StackPane.setAlignment(playingGrid, Pos.CENTER);
     }
 
-    public void setStatusLabel(boolean match){
+    public void setStatusLabel(boolean match) {
         notificationText.setVisible(true);
         notificationText.setViewOrder(-1.0);
-
         notificationText.setText(match ? "Match" : "Mismatch");
         blink.play();
-        blink.setOnFinished( e-> {
+        blink.setOnFinished(e -> {
             notificationText.setVisible(false);
             notificationText.setViewOrder(5.0);
         });
     }
 
-    public void setActivePlayerLabel(String name){
+    public void setActivePlayerLabel(String name) {
         activePlayerLabel.setText(name);
     }
 
     public void startGame(String player1Name, String player2Name) {
-        Player player1 = new Player(player1Name);
-        Player player2 = new Player(player2Name);
-
         blink = new ScaleTransition(Duration.seconds(0.5), notificationText);
         blink.setFromX(1.0);
         blink.setToX(0.75);
@@ -179,48 +190,72 @@ public class GameScreen {
         blink.setAutoReverse(true);
         blink.setCycleCount(4);
 
-        localGame = new LocalGame(player1,player2,this,matchSize, deckSize);
+        // Build the engine and start it with our prepared setup.
+        engine = new GameEngineImpl();
+        engine.start(config, setup);
 
+        // Drive the UI from engine events.
+        engine.addListener(new GameEventListener() {
+            @Override
+            public void onMatch(List<Integer> matchedIds, String scoringPlayer,
+                                int scoreAwarded, GameSnapshot snapshot) {
+                Platform.runLater(() -> {
+                    int activeIdx = scoringPlayer.equals(config.player1Name()) ? 1 : 0;
+                    awardPoints(activeIdx);
+                    setStatusLabel(true);
+                    removeMatch();
+                    if (snapshot.gameOver()) gameEnd();
+                });
+            }
+
+            @Override
+            public void onMismatch(List<Integer> flippedIds, GameSnapshot snapshot) {
+                Platform.runLater(() -> {
+                    turnCardsBack();
+                    setStatusLabel(false);
+                });
+            }
+
+            @Override
+            public void onTurnChanged(String newActivePlayer, GameSnapshot snapshot) {
+                Platform.runLater(() -> setActivePlayerLabel(newActivePlayer));
+            }
+        });
+
+        setActivePlayerLabel(engine.getActivePlayer());
     }
 
-    public void turnCardsBack(){
+    public void turnCardsBack() {
         canClick = false;
         pause.setOnFinished(e -> {
             for (MCard c : flippedCards) {
-                flipmotion(c);
+                flipmotion(c, cardIdOf.get(c));
             }
             flippedCards.clear();
             canClick = true;
         });
-
         pause.play();
-    }
-
-    private void flipCard(MCard card, int id) {
-        flippedCards.add(card);
-        localGame.flipCard(id);
     }
 
     public void removeMatch() {
         canClick = false;
         pause.setOnFinished(e -> {
-            for (MCard c : flippedCards){
+            for (MCard c : flippedCards) {
                 c.setVisible(false);
             }
             flippedCards.clear();
             canClick = true;
         });
-
         pause.play();
     }
-    public void awardPoints(int active){
-        if (active %2 == 0) {
+
+    public void awardPoints(int active) {
+        if (active % 2 == 0) {
             int current = Integer.parseInt(sboardScoreP2.getText());
-            sboardScoreP2.setText((current+10)+"");
-        }
-        else {
+            sboardScoreP2.setText((current + 10) + "");
+        } else {
             int current = Integer.parseInt(sboardScoreP1.getText());
-            sboardScoreP1.setText((current+10)+"");
+            sboardScoreP1.setText((current + 10) + "");
         }
     }
 
@@ -228,13 +263,11 @@ public class GameScreen {
         int points1 = Integer.parseInt(sboardScoreP1.getText());
         int points2 = Integer.parseInt(sboardScoreP2.getText());
         int winner;
-        if (points1 == points2){
+        if (points1 == points2) {
             winner = 0;
-        }
-        else if (points1 > points2){
+        } else if (points1 > points2) {
             winner = 1;
-        }
-        else{
+        } else {
             winner = 2;
         }
         try {
@@ -245,7 +278,9 @@ public class GameScreen {
 
             vS.addFxmlLoaders(address);
             controller.handViewStack(vS);
-            controller.passMatchData(sboardP1.getText(), sboardP2.getText(), sboardScoreP1.getText(),sboardScoreP2.getText(),matchSize, deckSize,winner);
+            controller.passMatchData(sboardP1.getText(), sboardP2.getText(),
+                    sboardScoreP1.getText(), sboardScoreP2.getText(),
+                    matchSize, deckSize, winner);
 
             Scene newScene = new Scene(root, 800, 600);
             Stage stage = (Stage) header.getScene().getWindow();
@@ -256,7 +291,7 @@ public class GameScreen {
         }
     }
 
-    private void flipmotion(MCard card){
+    private void flipmotion(MCard card, int cardId) {
         ScaleTransition firstHalf = new ScaleTransition(Duration.millis(300), card);
         firstHalf.setFromX(1);
         firstHalf.setToX(0);
@@ -268,11 +303,10 @@ public class GameScreen {
         if (!card.getFaceUp()) {
             firstHalf.setOnFinished(e -> {
                 card.setFaceUp(true);
-                flipCard(card, card.getid());
+                flippedCards.add(card);
+                engine.flip(cardId);
             });
-        }
-        else{
-            System.out.println("card.getFaceUp()");
+        } else {
             firstHalf.setOnFinished(e -> {
                 card.faceDown();
             });
