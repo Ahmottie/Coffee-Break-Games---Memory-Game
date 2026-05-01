@@ -13,14 +13,6 @@ The game supports two modes:
 
 The rules for this game are the same in Local and Lan mode.
 
-## Team
-
-| Person   | Area                                              |
-|----------| ------------------------------------------------- |
-| Amir     | Game engine — match logic, scoring, deck setup    |
-| Erik     | UI / FXML controllers, animations, local play     |
-| Suleyman | LAN networking — sockets, lobby sync, disconnect  |
-
 ## Requirements
 
 - **Java 24 or newer** (the project uses Java 24 language features and a
